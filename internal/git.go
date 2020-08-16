@@ -87,6 +87,10 @@ func GetAPIURL() (string, error) {
 
 	split := strings.Split(repo, "/")
 	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s", split[len(split)-2], split[len(split)-1])
+	if strings.HasSuffix(apiURL, ".git") {
+		dotIndex := strings.LastIndex(apiURL, ".")
+		apiURL = apiURL[:dotIndex]
+	}
 	return apiURL, nil
 }
 
