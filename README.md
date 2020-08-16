@@ -17,11 +17,15 @@ go install -u github.com/codekidX/focus
 
 Navigate to your GitHub project on your terminal and run:
 
+- list
+
 ```bash
 focus
 ```
 
 > this will list all your issues of your current git repository
+
+- on
 
 ```bash
 focus on 1
@@ -29,17 +33,27 @@ focus on 1
 
 > this will focus on the issue number **1** of your repository, and will show the description and info
 
+- open
+
 ```bash
 focus open 1
 ```
 
 > this will open issue number **1** on your default browser
 
+- help
+
 ```bash
 focus (help, h, ?)
 ```
 
-> shows the commands and help text
+- page
+
+```bash
+focus page 2
+```
+
+> shows page 2 of the issues list (pagination)
 
 Supports the following functionalities:
 

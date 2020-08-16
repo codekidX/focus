@@ -37,13 +37,17 @@ type GHIssue struct {
 }
 
 // ListIssues returns the list of GithubIssues
-func ListIssues() ([]GHIssue, error) {
+func ListIssues(queryStr string) ([]GHIssue, error) {
 	var issues []GHIssue
 	base, err := GetAPIURL()
 	if err != nil {
 		return issues, err
 	}
 	url := base + "/issues"
+	if queryStr != "" {
+		url += queryStr
+	}
+
 	resp, err := http.Get(url)
 	if err != nil || resp.StatusCode != 200 {
 		return issues, errors.New("OXO:Error while getting github issues")

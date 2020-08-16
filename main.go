@@ -33,7 +33,7 @@ func main() {
 	errp(err)
 
 	if len(args) == 0 {
-		issues, err := internal.ListIssues()
+		issues, err := internal.ListIssues("")
 		if err != nil {
 			errp(err)
 		}
@@ -73,7 +73,7 @@ func checkCommand(command string, args []string, config internal.Config) error {
 			return errors.New("not a id: number/int")
 		}
 
-		issues, err := internal.ListIssues()
+		issues, err := internal.ListIssues("")
 		if err != nil {
 			return err
 		}
@@ -85,10 +85,26 @@ func checkCommand(command string, args []string, config internal.Config) error {
 			}
 		}
 		return fmt.Errorf("no issue with id: %d, do focus list", id)
+	case "page":
+		if len(args) == 0 {
+			msg := "page command requires the page number as argument, for more info " +
+				"run: focus"
+			return errors.New(msg)
+		}
+		page, err := strconv.Atoi(args[0])
+		if err != nil {
+			return errors.New("not a valid page number: number/int")
+		}
+		issues, err := internal.ListIssues(fmt.Sprintf("?page=%d", page))
+		if err != nil {
+			return err
+		}
+		displayIssueList(issues)
+		return nil
 	case "open":
 		if len(args) == 0 {
 			msg := "open command requires the issue id to be passed as argument, for more info " +
-				"do: focus list"
+				"run: focus"
 			return errors.New(msg)
 		}
 		id, err := strconv.Atoi(args[0])
@@ -96,7 +112,7 @@ func checkCommand(command string, args []string, config internal.Config) error {
 			return errors.New("not a id: number/int")
 		}
 
-		issues, err := internal.ListIssues()
+		issues, err := internal.ListIssues("")
 		if err != nil {
 			return err
 		}
