@@ -7,10 +7,10 @@ to focus on the development of the tasks and issues at hand.
 
 ### Installing focus
 
-**WIP!!**
+**Install script is WIP!!** - for now do:
 
 ```bash
-
+go install -u github.com/codekidX/focus
 ```
 
 ### Using focus
@@ -36,7 +36,7 @@ focus open 1
 > this will open issue number **1** on your default browser
 
 ```bash
-focus help
+focus (help, h, ?)
 ```
 
 > shows the commands and help text
