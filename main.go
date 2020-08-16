@@ -107,7 +107,7 @@ func checkCommand(command string, args []string, config internal.Config) error {
 			}
 		}
 		return fmt.Errorf("no issue with id: %d, do focus list", id)
-	case "h", "help":
+	case "h", "help", "?":
 		out := t.Exp(helpText, tint.Cyan, tint.Yellow)
 		fmt.Println(out)
 		return nil
