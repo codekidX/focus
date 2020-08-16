@@ -66,6 +66,33 @@ func ListIssues(queryStr string) ([]GHIssue, error) {
 	return issues, nil
 }
 
+func GetIssue(number int) (GHIssue, error) {
+	var issue GHIssue
+	base, err := GetAPIURL()
+	if err != nil {
+		return issue, err
+	}
+
+	url := base + fmt.Sprintf("/issues/%d", number)
+	resp, err := http.Get(url)
+	if err != nil || resp.StatusCode != 200 {
+		return issue, errors.New("OXO:Error while getting github issue")
+	}
+	defer resp.Body.Close()
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return issue, err
+	}
+
+	err = json.Unmarshal(b, &issue)
+	if err != nil {
+		return issue, err
+	}
+
+	return issue, nil
+
+}
+
 // GetRepositoryURL gets the current directory repository url
 func GetRepositoryURL() (string, error) {
 	cmd := exec.Command("git", "remote", "-v")

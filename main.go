@@ -73,18 +73,12 @@ func checkCommand(command string, args []string, config internal.Config) error {
 			return errors.New("not a id: number/int")
 		}
 
-		issues, err := internal.ListIssues("")
+		issue, err := internal.GetIssue(id)
 		if err != nil {
 			return err
 		}
-
-		for _, issue := range issues {
-			if issue.Number == id {
-				displayFullIssue(issue)
-				return nil
-			}
-		}
-		return fmt.Errorf("no issue with id: %d, do focus list", id)
+		displayFullIssue(issue)
+		return nil
 	case "page":
 		if len(args) == 0 {
 			msg := "page command requires the page number as argument, for more info " +
@@ -112,17 +106,12 @@ func checkCommand(command string, args []string, config internal.Config) error {
 			return errors.New("not a id: number/int")
 		}
 
-		issues, err := internal.ListIssues("")
+		issue, err := internal.GetIssue(id)
 		if err != nil {
 			return err
 		}
 
-		for _, issue := range issues {
-			if issue.Number == id {
-				return browser.OpenURL(issue.HTMLURL)
-			}
-		}
-		return fmt.Errorf("no issue with id: %d, do focus list", id)
+		return browser.OpenURL(issue.HTMLURL)
 	case "h", "help", "?":
 		out := t.Exp(helpText, tint.Cyan, tint.Yellow)
 		fmt.Println(out)
