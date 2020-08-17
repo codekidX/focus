@@ -1,10 +1,13 @@
 package internal
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 // IssueFile is the file format used by focus to create a new issue from command line
@@ -12,7 +15,8 @@ import (
 type IssueFile struct {
 }
 
-const issueFileTempl = `
+const (
+	issueFileTempl = `
 // here mention the title of your git issue
 @title:
 
@@ -30,11 +34,20 @@ const issueFileTempl = `
 @assignee:
 
 `
+)
+
+var allowedIssueFileKeys = []string{
+	"title", "body", "milestone", "labels", "assignee",
+}
+
+func getIssueFilePath() string {
+	homedir, _ := os.UserHomeDir()
+	return filepath.Join(homedir, ".FocusFile")
+}
 
 // CreateNewFile creates a new FocusFile for adding a new issue
 func CreateNewFile() (string, error) {
-	homedir, _ := os.UserHomeDir()
-	fp := filepath.Join(homedir, ".FocusFile")
+	fp := getIssueFilePath()
 	if f, _ := os.Stat(fp); f != nil {
 		os.Remove(fp)
 	}
@@ -56,4 +69,58 @@ func OpenIssueFile(path string, editorCommand string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+// ParseIssueFile parses file into a map of key value pairs which can
+// be sent to Github API to create an issue
+func ParseIssueFile() (map[string]string, error) {
+	requestObject := make(map[string]string)
+	fp := getIssueFilePath()
+	if f, _ := os.Stat(fp); f == nil {
+		return requestObject, errors.New("create a issue file by running: focus create")
+	}
+	b, err := ioutil.ReadFile(fp)
+	if err != nil {
+		return requestObject, err
+	}
+
+	text := string(b)
+	lines := strings.Split(strings.Replace(text, "\r\n", "\n", -1), "\n")
+	var keyContent string
+	var operatingKey string
+	for _, line := range lines {
+		if strings.HasPrefix(line, "//") || strings.HasPrefix(line, "\n") || len(line) == 0 {
+			continue
+		}
+
+		// @ is the trigger and : is ending of the key
+		if strings.HasPrefix(line, "@") {
+			if operatingKey != "" {
+				requestObject[operatingKey] = keyContent
+				keyContent = ""
+			}
+
+			replacer := strings.NewReplacer("@", "", ":", "")
+			key := replacer.Replace(line)
+			if includes(key, allowedIssueFileKeys) {
+				operatingKey = key
+			} else {
+				return requestObject, fmt.Errorf("%s not allowed here", key)
+			}
+		} else {
+			keyContent += line + "\n"
+		}
+	}
+	// until next @ all the lines are appended to the key
+	return requestObject, nil
+}
+
+func includes(target string, list []string) bool {
+	for _, l := range list {
+		if l == target {
+			return true
+		}
+	}
+
+	return false
 }

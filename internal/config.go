@@ -13,6 +13,7 @@ type Cache struct {
 	// open issues count
 	OpenIssues map[string]int       `json:"open_issues"`
 	Issues     map[string][]GHIssue `json:"issues"`
+	XToken     string               `json:"xtoken"`
 }
 
 // Config is the config file for focus cli

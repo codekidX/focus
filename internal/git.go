@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +9,9 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/google/go-github/v32/github"
 )
 
 // GHRepo stores the repository info
@@ -66,6 +70,7 @@ func ListIssues(queryStr string) ([]GHIssue, error) {
 	return issues, nil
 }
 
+// GetIssue gets a issue by id from github
 func GetIssue(number int) (GHIssue, error) {
 	var issue GHIssue
 	base, err := GetAPIURL()
@@ -111,18 +116,34 @@ func GetRepositoryURL() (string, error) {
 
 // GetAPIURL returns the api url for accessing github data
 func GetAPIURL() (string, error) {
-	repo, err := GetRepositoryURL()
+	owner, repo, err := GetRepOwnerAndName()
 	if err != nil {
 		return "", err
 	}
-
-	split := strings.Split(repo, "/")
-	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s", split[len(split)-2], split[len(split)-1])
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, repo)
 	if strings.HasSuffix(apiURL, ".git") {
 		dotIndex := strings.LastIndex(apiURL, ".")
 		apiURL = apiURL[:dotIndex]
 	}
 	return apiURL, nil
+}
+
+// GetRepOwnerAndName gets the owner and repo name of the
+// current git directory
+func GetRepOwnerAndName() (string, string, error) {
+	repoURL, err := GetRepositoryURL()
+	if err != nil {
+		return "", "", err
+	}
+
+	split := strings.Split(repoURL, "/")
+	owner := split[len(split)-2]
+	repo := split[len(split)-1]
+	if strings.HasSuffix(repo, ".git") {
+		dotIndex := strings.LastIndex(repo, ".")
+		repo = repo[:dotIndex]
+	}
+	return owner, repo, nil
 }
 
 // GetRepositoryInfo returns the current repository info from the
@@ -140,4 +161,62 @@ func GetRepositoryInfo() (GHRepo, error) {
 	}
 
 	return repo, nil
+}
+
+// CreateNewIssue creates a new issue on github
+func CreateNewIssue(config Config, body map[string]string) error {
+	owner, repo, err := GetRepOwnerAndName()
+	if err != nil {
+		return err
+	}
+
+	if body["title"] == "" || body["body"] == "" {
+		return errors.New("cannot create issue without title or body")
+	}
+
+	title := strings.Trim(body["title"], " \n")
+	issueBody := strings.Trim(body["body"], " \n")
+	issueReq := github.IssueRequest{
+		Title: &title,
+		Body:  &issueBody,
+	}
+
+	if body["labels"] != "" {
+		if strings.Contains(body["labels"], ",") {
+			labels := strings.Split(body["labels"], ",")
+			issueReq.Labels = &labels
+		} else {
+			labels := []string{strings.Trim(body["labels"], " \n")}
+			issueReq.Labels = &labels
+		}
+	}
+
+	var username string
+	uprompt := &survey.Input{
+		Message: "username",
+	}
+	survey.AskOne(uprompt, &username)
+	var password string
+	pprompt := &survey.Password{
+		Message: "password",
+	}
+	survey.AskOne(pprompt, &password)
+
+	if username == "" || password == "" {
+		return errors.New("username or password needs to be pressent")
+	}
+
+	issueReq.Assignees = &[]string{owner}
+	fmt.Println(title, issueBody, issueReq.GetLabels(), issueReq.GetAssignees())
+
+	client := github.NewClient(&http.Client{Transport: &github.BasicAuthTransport{
+		Username: username,
+		Password: password,
+	}})
+	_, _, err = client.Issues.Create(context.Background(), owner, repo, &issueReq)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

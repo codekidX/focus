@@ -61,6 +61,17 @@ func checkCommand(command string, args []string, config internal.Config) error {
 			return err
 		}
 		return internal.OpenIssueFile(path, config.Editor)
+	case "push":
+		body, err := internal.ParseIssueFile()
+		if err != nil {
+			return err
+		}
+
+		err = internal.CreateNewIssue(config, body)
+		if err != nil {
+			return err
+		}
+		return nil
 	case "on":
 		if len(args) == 0 {
 			msg := "show command requires the issue id to be passed as argument, for more info " +
