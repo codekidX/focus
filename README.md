@@ -1,6 +1,6 @@
 ## 🎯 focus
 
-> Never leave the terminal and focus on what is important for your project.
+> Plan from your terminal
 
 Focus is a cli tool that provides the all the information and task needed for you
 to focus on the development of the tasks and issues at hand.
@@ -17,7 +17,7 @@ go install -u github.com/codekidX/focus
 
 Navigate to your GitHub project on your terminal and run:
 
-- list
+- List Issues
 
 ```bash
 focus
@@ -25,7 +25,7 @@ focus
 
 > this will list all your issues of your current git repository
 
-- on
+- View Issue
 
 ```bash
 focus on 1
@@ -33,7 +33,15 @@ focus on 1
 
 > this will focus on the issue number **1** of your repository, and will show the description and info
 
-- open
+- Create an Issue
+
+```bash
+# open nano to write down the issue, and `focus push` to push your latest issue
+focus create
+focus push
+```
+
+- Open Issue in Browser
 
 ```bash
 focus open 1
@@ -41,7 +49,7 @@ focus open 1
 
 > this will open issue number **1** on your default browser
 
-- help
+- Help with Focus Commands
 
 ```bash
 focus (help, h, ?)
