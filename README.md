@@ -23,7 +23,7 @@ Navigate to your GitHub project on your terminal and run:
 focus
 ```
 
-> this will list all your issues of your current git repository
+> this will list the latest 30 issues of your current git repository `focus page 2` will focus on next 30 issues.
 
 - View Issue
 
