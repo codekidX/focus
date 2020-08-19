@@ -37,6 +37,9 @@ func main() {
 		if err != nil {
 			errp(err)
 		}
+		if len(issues) == 0 {
+			errp(errors.New("no issues in this repository, do: focus create"))
+		}
 		displayIssueList(issues)
 	} else if len(args) > 0 {
 		command := args[0]
