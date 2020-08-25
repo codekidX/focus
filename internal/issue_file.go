@@ -115,6 +115,20 @@ func ParseIssueFile() (map[string]string, error) {
 	return requestObject, nil
 }
 
+func ResetFocusFile() error {
+	fpath := getIssueFilePath()
+	err := os.Remove(fpath)
+	if err != nil {
+		return err
+	}
+
+	if _, err := CreateNewFile(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func includes(target string, list []string) bool {
 	for _, l := range list {
 		if l == target {

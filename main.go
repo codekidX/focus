@@ -4,8 +4,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"os"
 	"strconv"
+	"strings"
 
 	"github.com/codekidX/focus/internal"
 	"github.com/pkg/browser"
@@ -19,17 +19,27 @@ var helpText = `
 Run command with no arguments to list issues of your current repository
 
 @(COMMANDS:)
+
 on - focus on issue with ID
+page - focus on page ${number}
 open - open issue in browser
+
 create - create issue from your local machine
-push - push created issue using the 'create' command
+push - push created issue to GitHub
+reset - cleans the previous issue file that you wrote and replaces with fresh issue file
+status - shows the pending issue(if any) which is ready to push
+
+done - mark an issue as closed/done
 `
+
+// TODO: add this to help command after implementing this freature
+// todo - create a todo inside focus (todo in focus is blocking action)
 
 func main() {
 	flag.Parse()
 
 	args := flag.Args()
-	config, err := internal.GetConfig()
+	fd, err := internal.GetFocusData()
 	errp(err)
 
 	if len(args) == 0 {
@@ -43,37 +53,73 @@ func main() {
 		displayIssueList(issues)
 	} else if len(args) > 0 {
 		command := args[0]
-		err := checkCommand(command, args[1:], config)
+		err := checkCommand(command, args[1:], fd)
 		errp(err)
 	}
-
 }
 
 func errp(err error) {
 	if err != nil {
-		t.Println(err.Error(), tint.Red.Bold())
-		os.Exit(1)
+		// t.Println(err.Error(), tint.Red.Bold())
+		// os.Exit(1)
+		panic(err)
 	}
 }
 
-func checkCommand(command string, args []string, config internal.Config) error {
+func checkCommand(command string, args []string, fd internal.FocusData) error {
 	switch command {
 	case "create":
 		path, err := internal.CreateNewFile()
 		if err != nil {
 			return err
 		}
-		return internal.OpenIssueFile(path, config.Editor)
+		return internal.OpenIssueFile(path, fd.Editor)
 	case "push":
 		body, err := internal.ParseIssueFile()
 		if err != nil {
 			return err
 		}
 
-		err = internal.CreateNewIssue(config, body)
+		err = internal.CreateNewIssue(fd, body)
 		if err != nil {
 			return err
 		}
+		return nil
+	case "reset":
+		return internal.ResetFocusFile()
+	case "status":
+		ff, err := internal.ParseIssueFile()
+		if err != nil {
+			return err
+		}
+
+		if ff["title"] != "" {
+			title := strings.Trim(ff["title"], " \n")
+			exp := t.Exp(fmt.Sprintf("(@(%s)) -> @(ready to push)", title),
+				tint.Green, tint.Yellow.Bold())
+			fmt.Println(exp)
+		} else {
+			return errors.New("No pending issue file to push!")
+		}
+		return nil
+	case "done":
+		if len(args) == 0 {
+			msg := "done command requires a issue number for marking it as closed, run: focus"
+			return errors.New(msg)
+		}
+
+		id, err := strconv.Atoi(args[0])
+		// TODO: check if not number then check if the arg[0] is "todo"
+		// if it is todo then mark todo at index for this repo
+		// as done -- CALL RemoveTODO(:index)
+		if err != nil {
+			return errors.New("not a id: number/int")
+		}
+		err = internal.CloseIssue(id)
+		if err != nil {
+			return err
+		}
+		fmt.Println(t.Exp(fmt.Sprintf("@(Closed) issue %d", id), tint.Red))
 		return nil
 	case "on":
 		if len(args) == 0 {
@@ -99,10 +145,13 @@ func checkCommand(command string, args []string, config internal.Config) error {
 				"run: focus"
 			return errors.New(msg)
 		}
+
 		page, err := strconv.Atoi(args[0])
 		if err != nil {
 			return errors.New("not a valid page number: number/int")
 		}
+
+		// TODO: pass this as query params not as a string
 		issues, err := internal.ListIssues(fmt.Sprintf("?page=%d", page))
 		if err != nil {
 			return err
@@ -115,6 +164,7 @@ func checkCommand(command string, args []string, config internal.Config) error {
 				"run: focus"
 			return errors.New(msg)
 		}
+
 		id, err := strconv.Atoi(args[0])
 		if err != nil {
 			return errors.New("not a id: number/int")
@@ -124,8 +174,41 @@ func checkCommand(command string, args []string, config internal.Config) error {
 		if err != nil {
 			return err
 		}
-
 		return browser.OpenURL(issue.HTMLURL)
+	case "todo":
+		if len(args) == 0 {
+			msg := "enter text to save todo -> example: focus todo \"we need to do this\""
+			return errors.New(msg)
+		}
+
+		if len(args) > 1 {
+			return errors.New("you need to pass todo in quotes for it to identify as a string")
+		}
+
+		err := internal.SaveTODO(fd, args[0])
+		if err != nil {
+			return err
+		}
+		return nil
+	case "todos":
+		if len(args) > 0 && args[0] == "rm" {
+			if len(args) > 1 {
+				id, err := strconv.Atoi(args[1])
+				if err != nil {
+					return errors.New("not a id: number/int")
+				}
+				// we remove todo at given index(human)
+				err = internal.RemoveTODO(fd, id)
+				if err != nil {
+					return err
+				}
+			} else {
+				// output that rm requires an index
+				return errors.New("rm requires an argument for index of TODO to remove")
+			}
+		}
+		internal.ListTODOs(fd)
+		return nil
 	case "h", "help", "?":
 		out := t.Exp(helpText, tint.Cyan, tint.Yellow)
 		fmt.Println(out)

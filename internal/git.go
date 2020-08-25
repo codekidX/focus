@@ -164,7 +164,7 @@ func GetRepositoryInfo() (GHRepo, error) {
 }
 
 // CreateNewIssue creates a new issue on github
-func CreateNewIssue(config Config, body map[string]string) error {
+func CreateNewIssue(config FocusData, body map[string]string) error {
 	owner, repo, err := GetRepOwnerAndName()
 	if err != nil {
 		return err
@@ -191,6 +191,27 @@ func CreateNewIssue(config Config, body map[string]string) error {
 		}
 	}
 
+	username, password, err := promptCredentials()
+	if err != nil {
+		return err
+	}
+
+	issueReq.Assignees = &[]string{owner}
+	// fmt.Println("t:", title, "B:", issueBody, issueReq.GetLabels(), issueReq.GetAssignees())
+
+	client := github.NewClient(&http.Client{Transport: &github.BasicAuthTransport{
+		Username: username,
+		Password: password,
+	}})
+	_, _, err = client.Issues.Create(context.Background(), owner, repo, &issueReq)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func promptCredentials() (string, string, error) {
 	var username string
 	uprompt := &survey.Input{
 		Message: "username",
@@ -203,20 +224,41 @@ func CreateNewIssue(config Config, body map[string]string) error {
 	survey.AskOne(pprompt, &password)
 
 	if username == "" || password == "" {
-		return errors.New("username or password needs to be pressent")
+		return "", "", errors.New("username or password needs to be pressent")
 	}
 
-	issueReq.Assignees = &[]string{owner}
-	fmt.Println(title, issueBody, issueReq.GetLabels(), issueReq.GetAssignees())
+	return username, password, nil
+}
+
+// CloseIssue is called when done command is ran on cli
+func CloseIssue(issueNum int) error {
+	owner, repo, err := GetRepOwnerAndName()
+	if err != nil {
+		return err
+	}
+
+	username, password, err := promptCredentials()
+	if err != nil {
+		return err
+	}
 
 	client := github.NewClient(&http.Client{Transport: &github.BasicAuthTransport{
 		Username: username,
 		Password: password,
 	}})
-	_, _, err = client.Issues.Create(context.Background(), owner, repo, &issueReq)
+
+	req := &github.IssueRequest{
+		State: s("closed"),
+	}
+
+	_, _, err = client.Issues.Edit(context.Background(), owner, repo, issueNum, req)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func s(text string) *string {
+	return &text
 }
