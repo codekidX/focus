@@ -56,7 +56,6 @@ func CreateNewFile() (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	return fp, nil
 }
 
@@ -125,7 +124,6 @@ func ResetFocusFile() error {
 	if _, err := CreateNewFile(); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -135,6 +133,5 @@ func includes(target string, list []string) bool {
 			return true
 		}
 	}
-
 	return false
 }

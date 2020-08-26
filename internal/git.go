@@ -66,7 +66,6 @@ func ListIssues(queryStr string) ([]GHIssue, error) {
 	if err != nil {
 		return issues, err
 	}
-
 	return issues, nil
 }
 
@@ -93,7 +92,6 @@ func GetIssue(number int) (GHIssue, error) {
 	if err != nil {
 		return issue, err
 	}
-
 	return issue, nil
 
 }
@@ -159,7 +157,6 @@ func GetRepositoryInfo() (GHRepo, error) {
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return repo, err
 	}
-
 	return repo, nil
 }
 
@@ -207,7 +204,6 @@ func CreateNewIssue(config FocusData, body map[string]string) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -226,7 +222,6 @@ func promptCredentials() (string, string, error) {
 	if username == "" || password == "" {
 		return "", "", errors.New("username or password needs to be pressent")
 	}
-
 	return username, password, nil
 }
 
@@ -255,7 +250,6 @@ func CloseIssue(issueNum int) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
