@@ -30,10 +30,12 @@ reset - cleans the previous issue file that you wrote and replaces with fresh is
 status - shows the pending issue(if any) which is ready to push
 
 done - mark an issue as closed/done
+todo - create a todo for your current repository
+todos - list TODOs for your current repository
+todos [rm] $id - removes a TODO for given $id from this repository
 `
 
 // TODO: add this to help command after implementing this freature
-// todo - create a todo inside focus (todo in focus is blocking action)
 
 func main() {
 	flag.Parse()
@@ -45,7 +47,9 @@ func main() {
 	if len(args) == 0 {
 		issues, err := internal.ListIssues("")
 		if err != nil {
-			errp(err)
+			t.Println("cannot fetch issues for this directory, is it a git repository?",
+				tint.Red.Bold())
+			return
 		}
 		if len(issues) == 0 {
 			errp(errors.New("no issues in this repository, do: focus create"))
@@ -84,6 +88,9 @@ func checkCommand(command string, args []string, fd internal.FocusData) error {
 		if err != nil {
 			return err
 		}
+
+		msg := t.Exp(fmt.Sprintf("@(%s) is pushed to GitHub", body["title"]), tint.Yellow)
+		fmt.Println(msg)
 		return nil
 	case "reset":
 		return internal.ResetFocusFile()
@@ -99,7 +106,7 @@ func checkCommand(command string, args []string, fd internal.FocusData) error {
 				tint.Green, tint.Yellow.Bold())
 			fmt.Println(exp)
 		} else {
-			return errors.New("No pending issue file to push!")
+			return errors.New("no pending issue file to push")
 		}
 		return nil
 	case "done":
