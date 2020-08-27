@@ -7,10 +7,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/printzero/tint"
 )
 
+// FocusData is config required for focus to function
 type FocusData struct {
 	Editor string
 	// map of repo url and array of todos
@@ -65,6 +67,7 @@ func RemoveTODO(fd FocusData, atIndex int) error {
 	return nil
 }
 
+// ListTODOs displays a list of todos
 func ListTODOs(fd FocusData) {
 	base, _ := GetRepositoryURL()
 	if len(fd.TODOs) == 0 {
@@ -125,9 +128,17 @@ func GetFocusData() (FocusData, error) {
 	var fd FocusData
 	cachePath := getFocusDataFilePath()
 	if f, _ := os.Stat(cachePath); f == nil {
-		fd := FocusData{
-			Editor: "nano",
+		var editor string
+		if runtime.GOOS == "windows" {
+			editor = "notepad"
+		} else {
+			editor = "nano"
 		}
+
+		fd := FocusData{
+			Editor: editor,
+		}
+
 		var buf bytes.Buffer
 		encodeData(fd, &buf)
 		err := ioutil.WriteFile(cachePath, buf.Bytes(), 0755)

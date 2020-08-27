@@ -84,12 +84,15 @@ func checkCommand(command string, args []string, fd internal.FocusData) error {
 			return err
 		}
 
+		// fmt.Printf("%T %v >>\n", body["labels"], body)
+
 		err = internal.CreateNewIssue(fd, body)
 		if err != nil {
 			return err
 		}
 
-		msg := t.Exp(fmt.Sprintf("@(%s) is pushed to GitHub", body["title"]), tint.Yellow)
+		msg := t.Exp(fmt.Sprintf("@(%s) is pushed to GitHub", strings.Trim(body["title"], " \n")),
+			tint.Yellow)
 		fmt.Println(msg)
 		return nil
 	case "reset":

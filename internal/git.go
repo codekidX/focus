@@ -179,12 +179,19 @@ func CreateNewIssue(config FocusData, body map[string]string) error {
 	}
 
 	if body["labels"] != "" {
-		if strings.Contains(body["labels"], ",") {
-			labels := strings.Split(body["labels"], ",")
+		trimmedLabels := strings.ReplaceAll(body["labels"], " ", "")
+		if strings.Contains(trimmedLabels, ",") {
+			splitted := strings.Split(body["labels"], ",")
+			var labels []string
+			for _, l := range splitted {
+				labels = append(labels, strings.Trim(l, " \n"))
+			}
 			issueReq.Labels = &labels
+			fmt.Println(labels)
 		} else {
 			labels := []string{strings.Trim(body["labels"], " \n")}
 			issueReq.Labels = &labels
+			fmt.Println(labels)
 		}
 	}
 
